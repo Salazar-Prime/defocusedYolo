@@ -53,16 +53,16 @@ if img is not None and template is not None:
         imgGreen, templateGreen, template_threshold, detection_type="multiple"
     )
 
-# add visual break in the UI
-st.markdown("---")
+    # add visual break in the UI
+    st.markdown("---")
 
-col2_1, col2_2 = st.columns([1, 1])
-with col2_1:
-    st.write("Matched Particles")
-    st.write(matchedParticles)
-with col2_2:
-    st.write("Annotated Image")
-    annotated_img = annotate_bounding_boxes_over_image(
-        imgGreen, matchedParticles, add_particle_id
-    )
-    st.image(annotated_img, caption="Annotated Image", use_column_width=True)
+    col2_1, col2_2 = st.columns([1, 1])
+    with col2_1:
+        st.write("Matched Particles")
+        st.write(matchedParticles)
+    with col2_2:
+        st.write("Annotated Image")
+        annotated_img = annotate_bounding_boxes_over_image(
+            imgGreen, matchedParticles, add_particle_id
+        )
+        st.image(annotated_img, caption="Annotated Image", use_column_width=True)
