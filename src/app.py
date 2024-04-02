@@ -1,8 +1,8 @@
 import streamlit as st
 
 # import pandas as pd
-from utils import match_template_in_image, annotate_bounding_boxes_over_image
 import cv2
+from utils import match_template_in_image, annotate_bounding_boxes_over_image
 import numpy as np
 
 ##### CONSTANT USER PARAMETERS #####
