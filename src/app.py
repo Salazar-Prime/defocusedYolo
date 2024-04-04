@@ -2,8 +2,16 @@ import streamlit as st
 
 # import pandas as pd
 import cv2
-from utils import match_template_in_image, annotate_bounding_boxes_over_image
+from utils import (
+    match_template_in_image,
+    annotate_bounding_boxes_over_image,
+    match_particle_in_video,
+    crop,
+    mask,
+)
 import numpy as np
+import tempfile
+import pandas as pd
 
 ##### CONSTANT USER PARAMETERS #####
 
@@ -42,7 +50,13 @@ with col1_1:
 with col1_2:
     template = st.file_uploader("Upload a template", type=["jpg", "png", "jpeg"])
 
-if img is not None and template is not None:
+
+# template matching in image
+if (
+    detection_type == "Find template in an image"
+    and img is not None
+    and template is not None
+):
     # img and template in green channel only
     imgGreen = cv2.imdecode(np.frombuffer(img.read(), np.uint8), 1)
     imgGreen = imgGreen[:, :, 1]
@@ -66,3 +80,88 @@ if img is not None and template is not None:
             imgGreen, matchedParticles, add_particle_id
         )
         st.image(annotated_img, caption="Annotated Image", use_column_width=True)
+
+# # template matching in video
+# if (
+#     detection_type == "Find and track template in a video"
+#     and video is not None
+#     and template is not None
+# ):
+#     # get first frame from video
+#     tfile = tempfile.NamedTemporaryFile(delete=False)
+#     tfile.write(video.read())
+
+#     # video and template in green channel only
+#     cap = cv2.VideoCapture(tfile.name)
+#     templateGreen = cv2.imdecode(np.frombuffer(template.read(), np.uint8), 1)
+#     templateGreen = templateGreen[:, :, 1]
+
+#     # add visual break in the UI
+#     st.markdown("---")
+
+#     # get annotation for the first frame
+#     ret, frame = cap.read()
+#     frameGreen = frame[:, :, 1]
+#     matchedParticles_F0 = match_template_in_image(
+#         frameGreen, templateGreen, template_threshold, detection_type="multiple"
+#     )
+#     # add particleID and frame number
+#     matchedParticles_F0["particleID"] = matchedParticles_F0.index
+#     matchedParticles_F0["frame"] = 0
+
+#     st.write(f"Found {len(matchedParticles_F0)} Particles in Frame 0")
+
+#     dfVideo = match_particle_in_video(
+#         cap, template_threshold, matchedParticles_F0, search_range
+#     )
+
+
+if (
+    detection_type == "Find and track template in a video"
+    and video is not None
+    and template is not None
+):
+    template = cv2.imdecode(np.frombuffer(template.read(), np.uint8), 1)
+    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile.write(video.read())
+    cap = cv2.VideoCapture(tfile.name)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # create a slider with number of frames
+    frameSlider = st.slider(
+        "Select Frame Number", min_value=0, max_value=frame_count, value=0
+    )
+    # frame 0
+    ret, frame0 = cap.read()
+    frame0 = frame0[:, :, 1]
+    matchedParticles_F0 = match_template_in_image(
+        frame0,
+        template[:, :, 1],
+        template_threshold,
+        detection_type="multiple",
+    )
+    matchedParticles_F0["particleID"] = matchedParticles_F0.index
+    matchedParticles_F0["frame"] = 0
+    # get the frame from slider
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frameSlider)
+    ret, currentFrame = cap.read()
+    if ret:  # frame exists
+        dfFrame = pd.DataFrame()
+        for index, row in matchedParticles_F0.iterrows():
+            currentTemplate = crop(frame0, row, 0)
+            subImg = mask(currentFrame[:, :, 1], row, search_range)
+            matchParticle = match_template_in_image(
+                subImg, currentTemplate, template_threshold, detection_type="single"
+            )
+            matchParticle["particleID"] = row["particleID"]
+            matchParticle["frame"] = frameSlider
+            dfFrame = pd.concat([dfFrame, matchParticle])
+        # annotate the image
+        annotated_img = annotate_bounding_boxes_over_image(
+            currentFrame[:, :, 1], dfFrame, add_particle_id
+        )
+        st.image(
+            annotated_img,
+            caption=f"Annotated Frame {frameSlider}",
+            use_column_width=True,
+        )
