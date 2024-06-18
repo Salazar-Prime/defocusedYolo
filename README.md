@@ -19,7 +19,15 @@ Create a bounding box around a bubble. USe the bounding box as a template for la
 ### Installing
 
 * Create a conda env
-* Install dependencies using pip
+```
+conda create -n <env-name> python=3.10
+conda activate <env-name>
+```
+* Install Dependencies using pip
+```
+pip install streamlit
+pip install -r requirements.txt 
+```
 
 ### Executing program
 
@@ -27,8 +35,6 @@ Create a bounding box around a bubble. USe the bounding box as a template for la
 ```
 git clone https://github.com/Salazar-Prime/defocusedYolo --depth 1
 cd defocusedYolo
-pip install -r requirements.txt # optional if env is already setup 
-pip install streamlit # optional if env is already setup 
 ```
 * Start streamlit local server
 ```
