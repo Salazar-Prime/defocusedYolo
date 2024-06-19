@@ -1,7 +1,5 @@
 # Defocused YOLO 
 
-## Description
-
 Create a bounding box around a bubble. USe the bounding box as a template for lacting similar objects in an video. 
 
 ## Getting Started
