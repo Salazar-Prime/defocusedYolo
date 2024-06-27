@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 
 
@@ -231,31 +229,32 @@ if (
 
 
     if canvas_result.image_data is not None:
-        st.image(canvas_result.image_data)
+            st.image(canvas_result.image_data)
     if canvas_result.json_data is not None:
         objects = pd.json_normalize(canvas_result.json_data["objects"])
-
         for col in objects.select_dtypes(include=['object']).columns:
-            objects[col] = objects[col].astype("str") 
+            objects[col] = objects[col].astype("str")
 
         #final dataframe contains information of the location of the newly drawn bboxes
-        myDF = pd.DataFrame(columns = ['x top left', 'y top left', 'width', 'height'])
-        myDF['x top left'] = objects['left']
-        myDF['y top left'] = objects['top']
-        myDF['width'] = objects['width']
-        myDF['height'] = objects['height']
-        #show the dataframe on Streamlit
-        st.dataframe(myDF)  
+        if len(objects) != 0:
+            myDF = pd.DataFrame(columns = ['x top left', 'y top left', 'width', 'height'])
+            myDF['x top left'] = objects['left']
+            myDF['y top left'] = objects['top']
+            myDF['width'] = objects['width']
+            myDF['height'] = objects['height']
+            st.dataframe(myDF)
 
 
-    def convert_df(df):
-        return df.to_csv().encode("utf-8")
-    csv = convert_df(myDF)
+        #show the dataframe on Streamlit  
+        def convert_df(df):
+            return df.to_csv().encode("utf-8")
+        
+        if len(objects) != 0:
+            csv = convert_df(myDF)
 
-
-    st.download_button(
-        label="Download data as CSV",
-        data=csv,
-        file_name="templates.csv",
-        mime="text/csv",
-    )  
+            st.download_button(
+                label="Download data as CSV",
+                data=csv,
+                file_name="templates.csv",
+                mime="text/csv",
+            )  
