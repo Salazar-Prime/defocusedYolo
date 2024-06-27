@@ -31,8 +31,10 @@ pip install -r requirements.txt
 
 * Clone the Repo
 ```
-git clone https://github.com/Salazar-Prime/defocusedYolo --depth 1
+git clone https://github.com/Salazar-Prime/defocusedYolo
 cd defocusedYolo
+git checkout -b <branch-name> origin/<branch-name>
+git fetch --all
 ```
 * Start streamlit local server
 ```
