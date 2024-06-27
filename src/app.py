@@ -1,4 +1,7 @@
+
+
 import streamlit as st
+
 
 # import pandas as pd
 import cv2
@@ -13,42 +16,64 @@ import numpy as np
 import tempfile
 import pandas as pd
 
+
+from PIL import Image
+import streamlit as st
+from streamlit_drawable_canvas import st_canvas
+
+
 ##### CONSTANT USER PARAMETERS #####
+
 
 ##### SIDEBAR #####
 st.sidebar.title("User Parameters")
 
+
 # choice. Find template in image. Find and track template in video
 detection_type = st.sidebar.selectbox(
     "Detection Type",
-    ["Find template in an image", "Find and track template in a video"],
+    ["Find template in an image", "Find and track template in a video",
+     "Annotate the first frame of a video"],
     index=0,
-)
+)  
 
-template_threshold = st.sidebar.slider(
-    "Threshold for Template Matching", min_value=0.0, max_value=1.0, value=0.9
-)
 
-search_range = st.sidebar.number_input(
-    "Search Range (pixels)", min_value=0, max_value=50, value=10
-)
+if detection_type !=  "Annotate the first frame of a video":
+    template_threshold = st.sidebar.slider(
+        "Threshold for Template Matching", min_value=0.0, max_value=1.0, value=0.9
+    )
+
+
+    search_range = st.sidebar.number_input(
+        "Search Range (pixels)", min_value=0, max_value=50, value=10
+    )
+else:
+    stroke_width = st.sidebar.slider("Stroke width: ", 1, 25, 3)
+    stroke_color = st.sidebar.color_picker("Stroke color hex: ")    
+
 
 st.sidebar.title("Display Parameters")
 
+
 add_particle_id = st.sidebar.checkbox("Display Particle ID")
 
+
 ##### MAIN PAGE #####
+
 
 st.title("Match and find particles in a Video")
 col1_1, col1_2 = st.columns([1, 1])
 with col1_1:
     if detection_type == "Find template in an image":
         img = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
-    elif detection_type == "Find and track template in a video":
+    elif (detection_type == "Find and track template in a video") or (detection_type == "Annotate the first frame of a video"):
         video = st.file_uploader("Upload a video", type=["mp4", "avi"])
 
+
 with col1_2:
-    template = st.file_uploader("Upload a template", type=["jpg", "png", "jpeg"])
+    if detection_type != "Annotate the first frame of a video":
+        template = st.file_uploader("Upload a template", type=["jpg", "png", "jpeg" ])
+   
 
 
 # template matching in image
@@ -63,12 +88,15 @@ if (
     templateGreen = cv2.imdecode(np.frombuffer(template.read(), np.uint8), 1)
     templateGreen = templateGreen[:, :, 1]
 
+
     matchedParticles = match_template_in_image(
         imgGreen, templateGreen, template_threshold, detection_type="multiple"
     )
 
+
     # add visual break in the UI
     st.markdown("---")
+
 
     col2_1, col2_2 = st.columns([1, 1])
     with col2_1:
@@ -81,6 +109,7 @@ if (
         )
         st.image(annotated_img, caption="Annotated Image", use_column_width=True)
 
+
 # # template matching in video
 # if (
 #     detection_type == "Find and track template in a video"
@@ -91,13 +120,16 @@ if (
 #     tfile = tempfile.NamedTemporaryFile(delete=False)
 #     tfile.write(video.read())
 
+
 #     # video and template in green channel only
 #     cap = cv2.VideoCapture(tfile.name)
 #     templateGreen = cv2.imdecode(np.frombuffer(template.read(), np.uint8), 1)
 #     templateGreen = templateGreen[:, :, 1]
 
+
 #     # add visual break in the UI
 #     st.markdown("---")
+
 
 #     # get annotation for the first frame
 #     ret, frame = cap.read()
@@ -109,11 +141,15 @@ if (
 #     matchedParticles_F0["particleID"] = matchedParticles_F0.index
 #     matchedParticles_F0["frame"] = 0
 
+
 #     st.write(f"Found {len(matchedParticles_F0)} Particles in Frame 0")
+
 
 #     dfVideo = match_particle_in_video(
 #         cap, template_threshold, matchedParticles_F0, search_range
 #     )
+
+
 
 
 if (
@@ -124,8 +160,9 @@ if (
     template = cv2.imdecode(np.frombuffer(template.read(), np.uint8), 1)
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(video.read())
-    cap = cv2.VideoCapture(tfile.name)
+    cap = cv2.VideoCapture(tfile.name) #cap stands for "video CAPture object"
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
 
     # create a slider with number of frames
     frameSlider = st.slider(
@@ -165,3 +202,60 @@ if (
             caption=f"Annotated Frame {frameSlider}",
             use_column_width=True,
         )
+   
+if (
+    detection_type == "Annotate the first frame of a video"
+    and video is not None
+):  
+    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile.write(video.read())
+    cap = cv2.VideoCapture(tfile.name)
+    #frame 0
+    ret, frame0 = cap.read()
+    frame0 = frame0[:, :, 1]
+    #convert from np.array to Image object
+    frame0_image = Image.fromarray(cv2.cvtColor(frame0, cv2.COLOR_GRAY2RGB))
+
+
+    canvas_result = st_canvas(
+    fill_color="rgba(255, 165, 0, 0.3)",
+    stroke_width=stroke_width,
+    stroke_color=stroke_color,
+    background_image= frame0_image,
+    update_streamlit= True,
+    height=frame0_image.height,  
+    drawing_mode= 'rect',
+    point_display_radius= 0,
+    key="canvas",
+    )
+
+
+    if canvas_result.image_data is not None:
+        st.image(canvas_result.image_data)
+    if canvas_result.json_data is not None:
+        objects = pd.json_normalize(canvas_result.json_data["objects"])
+
+        for col in objects.select_dtypes(include=['object']).columns:
+            objects[col] = objects[col].astype("str") 
+
+        #final dataframe contains information of the location of the newly drawn bboxes
+        myDF = pd.DataFrame(columns = ['x top left', 'y top left', 'width', 'height'])
+        myDF['x top left'] = objects['left']
+        myDF['y top left'] = objects['top']
+        myDF['width'] = objects['width']
+        myDF['height'] = objects['height']
+        #show the dataframe on Streamlit
+        st.dataframe(myDF)  
+
+
+    def convert_df(df):
+        return df.to_csv().encode("utf-8")
+    csv = convert_df(myDF)
+
+
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name="templates.csv",
+        mime="text/csv",
+    )  
