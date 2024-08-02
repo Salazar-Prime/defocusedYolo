@@ -12,7 +12,6 @@ import numpy as np
 import tempfile
 import pandas as pd
 import json
-import time
 
 
 from PIL import Image
@@ -34,7 +33,6 @@ st.sidebar.title("Display Parameters")
 
 add_particle_id = st.sidebar.checkbox("Display Particle ID")
 clear_canvas = st.sidebar.button("Clear Canvas", key = "clear_canvas")
-download_cropped_image = st.sidebar.button("Download", key = "download_cropped_image")
 
 ##### MAIN PAGE #####
 
@@ -71,53 +69,35 @@ if video is not None:
     if "check_clear" not in st.session_state:
         st.session_state["check_clear"] = False
 
-
     #display buttons.
     col1, col2, col3, col4 = st.columns(4)
-    try: 
-        with col1:
-            if st.button("Left ", key = "left"):
-                st.session_state["check_left"] = True
-            if st.session_state["check_left"]:
-                st.session_state["drawn_obj"]["left"] = st.session_state["drawn_obj"]["left"] - 10
-        with col2:
-            if st.button("Right", key = "right"):
-                st.session_state["check_right"] = True
-            if st.session_state["check_right"]:
-                st.session_state["drawn_obj"]["left"] = st.session_state["drawn_obj"]["left"] + 10
-        with col3:
-            if st.button("Up   ", key = "up"):
-                st.session_state["check_up"] = True
-            if st.session_state["check_up"]:
-                st.session_state["drawn_obj"]["top"] = st.session_state["drawn_obj"]["top"] - 10
-        with col4:
-            if st.button("Down ", key = "down"):
-                st.session_state["check_down"] = True
-            if st.session_state["check_down"]:
-                st.session_state["drawn_obj"]["top"] = st.session_state["drawn_obj"]["top"] + 10
-    except:
-        print("You haven't drawn an object at this point1.")
+    with col1:
+        if st.button("Left ", key = "left"):
+            st.session_state["check_left"] = True
+        if st.session_state["check_left"]:
+            st.session_state["drawn_obj"]["left"] = st.session_state["drawn_obj"]["left"] - 10
+    with col2:
+        if st.button("Right", key = "right"):
+            st.session_state["check_right"] = True
+        if st.session_state["check_right"]:
+            st.session_state["drawn_obj"]["left"] = st.session_state["drawn_obj"]["left"] + 10
+    with col3:
+        if st.button("Up   ", key = "up"):
+            st.session_state["check_up"] = True
+        if st.session_state["check_up"]:
+            st.session_state["drawn_obj"]["top"] = st.session_state["drawn_obj"]["top"] - 10
+    with col4:
+        if st.button("Down ", key = "down"):
+            st.session_state["check_down"] = True
+        if st.session_state["check_down"]:
+            st.session_state["drawn_obj"]["top"] = st.session_state["drawn_obj"]["top"] + 10
 
-    #task: clear_canvas
+
+    #task2: clear_canvas
     if clear_canvas:
         st.session_state["drawn_obj"] = {}
         st.session_state["check_clear"] = True
         st.rerun()
-
-    #task: download_cropped_image
-    if download_cropped_image:
-        if st.session_state["drawn_obj"] == {}:
-            st.warning("There is nothing to download ⚠️. Please draw an object")
-            time.sleep(2)
-            st.rerun()
-        else:
-            top = st.session_state["drawn_obj"]["top"]
-            left = st.session_state["drawn_obj"]["left"]
-            height = st.session_state["drawn_obj"]["height"]
-            width = st.session_state["drawn_obj"]["width"]
-            cropped_frame = frame0[top: top + height, left : left + width, :]
-            cropped_image = Image.fromarray(cropped_frame, 'RGB')
-            cropped_image.save("frame.jpg")
 
 
     canvas_result = st_canvas(
@@ -144,11 +124,10 @@ if video is not None:
         for col in objects.select_dtypes(include=['object']).columns:
             objects[col] = objects[col].astype("str")
         
-        #variable contains information of the location of the newly drawn bboxes
-        try:
-            st.session_state["drawn_obj"] = canvas_result.json_data["objects"][0]
-        except:
-            print("You haven't drawn an object at this point2.")
+        #final dataframe contains information of the location of the newly drawn bboxes
+        myDF = pd.DataFrame(columns = ['x top left', 'y top left', 'width', 'height'])
+        
+        st.session_state["drawn_obj"] = canvas_result.json_data["objects"][0]
 
 
     #restate the buttons back to the original status.
