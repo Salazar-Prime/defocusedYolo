@@ -50,7 +50,9 @@ streamlit run src/app.py
 
 ## Version History
 
-* 0.1
+* 0.2.0.0
+    * User can draw BB for template matching
+* 0.1.0.0
     * Initial Release
 
 ## License
