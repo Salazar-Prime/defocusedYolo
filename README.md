@@ -42,7 +42,7 @@ streamlit run src/app.py
 ```
 ## TODO
 
-- [ ] Add bounding box canvas for finding the template in the video
+- [x] Add bounding box canvas for finding the template in the video
 
 ## Authors
 
