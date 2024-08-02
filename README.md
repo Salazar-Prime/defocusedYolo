@@ -47,6 +47,7 @@ streamlit run src/app.py
 ## Authors
 
 * [Varun Aggarwal](https://www.linkedin.com/in/aggarwal-v/)
+* [Tri Vo](https://github.com/qtris123)
 
 ## Version History
 
